@@ -207,6 +207,14 @@ function neededDoor(){
   return open[Math.floor(Math.random()*open.length)] || null;
 }
 
+function clearCompletedDoorPallets(doorNumber){
+  if(counts[doorNumber-1] < targets[doorNumber-1]) return false;
+  const before=pallets.length;
+  pallets=pallets.filter(function(item){return item.door!==doorNumber;});
+  if(selected && !pallets.some(function(item){return item.id===selected;})) selected=null;
+  return pallets.length !== before;
+}
+
 function spawn(){
   if(!running || busy) return;
   const door=neededDoor();
@@ -299,6 +307,14 @@ function deliver(doorNumber){
     renderPallets();
     return;
   }
+  if(counts[doorNumber-1] >= targets[doorNumber-1]){
+    clearCompletedDoorPallets(doorNumber);
+    tone('ok');
+    msg.textContent='Door '+doorNumber+' is already full. Extra pallets cleared.';
+    renderDoors();
+    renderPallets();
+    return;
+  }
   busy=true;
   tone('move');
   msg.textContent='Forklift loading pallet '+pallet.door+'...';
@@ -307,14 +323,19 @@ function deliver(doorNumber){
   fork.style.left=(((doorNumber-0.5)/4)*100)+'%';
   fork.style.top='22%';
   setTimeout(function(){
-    pallets=pallets.filter(function(item){return item.id!==selected;});
+    counts[doorNumber-1]=Math.min(counts[doorNumber-1]+1,targets[doorNumber-1]);
+    const doorNowFull=counts[doorNumber-1] >= targets[doorNumber-1];
+    pallets=pallets.filter(function(item){
+      if(item.id===selected) return false;
+      if(doorNowFull && item.door===doorNumber) return false;
+      return true;
+    });
     selected=null;
-    counts[doorNumber-1]++;
     renderDoors();
     renderPallets();
     tone('ok');
     load.style.display='none';
-    msg.textContent='Door '+doorNumber+' loaded.';
+    msg.textContent=doorNowFull?'Door '+doorNumber+' full. Extra pallets cleared.':'Door '+doorNumber+' loaded.';
     fork.style.left='50%';
     fork.style.top='52%';
     setTimeout(function(){
