@@ -42,6 +42,10 @@ const intro=document.getElementById('intro');
 const start=document.getElementById('start');
 const restart=document.getElementById('restart');
 const sound=document.getElementById('sound');
+const altStart=document.createElement('button');
+altStart.id='altStart';
+altStart.type='button';
+start.insertAdjacentElement('afterend',altStart);
 
 let pallets=[];
 let selected=null;
@@ -79,6 +83,7 @@ function playIntroTheme(done){
   if(introPlaying) return;
   introPlaying=true;
   start.disabled=true;
+  altStart.style.display='none';
   start.textContent='SAFETY MUSIC...';
 
   if(soundOn){
@@ -137,6 +142,7 @@ function showStageIntro(index){
   intro.textContent=currentStage.intro;
   start.textContent=currentStage.button;
   start.disabled=false;
+  altStart.style.display='none';
   msg.textContent='Tap a pallet, then its matching dock door.';
   renderDoors();
   renderPallets();
@@ -149,6 +155,8 @@ function showTrainingAward(){
   intro.textContent=currentStage.completeText;
   start.textContent='BEGIN PRODUCTION SHIFT';
   start.disabled=false;
+  altStart.textContent='REPLAY TRAINING';
+  altStart.style.display='block';
   tone('win');
 }
 
@@ -232,8 +240,10 @@ function endGame(won,text){
     overlay.style.display='flex';
     title.textContent=won?currentStage.completeTitle:'SHIFT FAILED';
     intro.textContent=text;
-    start.textContent=won?'PLAY AGAIN':'RETRY SHIFT';
-    overlayAction=won?'restart':'stage';
+    start.textContent=won?'REPLAY SHIFT':'RETRY SHIFT';
+    altStart.textContent='NEW GAME';
+    altStart.style.display='block';
+    overlayAction='replay';
   },450);
 }
 
@@ -245,6 +255,7 @@ function startStage(){
   running=true;
   nextId=1;
   overlay.style.display='none';
+  altStart.style.display='none';
   msg.textContent=currentStage.timed?'Production line is live.':'Training shift: accuracy first.';
   fork.style.left='50%';
   fork.style.top='52%';
@@ -320,11 +331,19 @@ start.addEventListener('click',function(){
     showStageIntro(1);
     return;
   }
-  if(overlayAction==='restart'){
-    showStageIntro(0);
+  if(overlayAction==='replay'){
+    showStageIntro(stageIndex);
     return;
   }
   playIntroTheme(startStage);
+});
+
+altStart.addEventListener('click',function(){
+  if(overlayAction==='award'){
+    showStageIntro(0);
+    return;
+  }
+  showStageIntro(0);
 });
 
 restart.addEventListener('click',function(){
