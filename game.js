@@ -1,6 +1,35 @@
-const targets=[5,5,5,5];
-const counts=[0,0,0,0];
-const maxFloor=8;
+const stagePlans=[
+  {
+    id:1,
+    name:'TRAINING SHIFT',
+    targets:[3,3,3,3],
+    maxFloor:12,
+    timed:false,
+    button:'START TRAINING',
+    intro:'Load 3 pallets per dock. No time limit. Match each pallet number to the same dock door.',
+    completeTitle:'TRAINING COMPLETE',
+    completeText:'Congratulations! Welcome to the team! You are now certified for basic dock freight.'
+  },
+  {
+    id:2,
+    name:'PRODUCTION SHIFT',
+    targets:[5,5,5,5],
+    maxFloor:8,
+    timed:true,
+    spawnMs:1850,
+    button:'START PRODUCTION',
+    intro:'The line is live. Pallets keep arriving. Fill the trailers before the staging floor jams.',
+    completeTitle:'SHIFT COMPLETE',
+    completeText:'All trailers loaded. Shift complete.'
+  }
+];
+
+let stageIndex=0;
+let currentStage=stagePlans[0];
+let targets=currentStage.targets.slice();
+let counts=[0,0,0,0];
+let maxFloor=currentStage.maxFloor;
+
 const doors=document.getElementById('doors');
 const palletsEl=document.getElementById('pallets');
 const statusEl=document.getElementById('status');
@@ -23,6 +52,7 @@ let nextId=1;
 let soundOn=true;
 let audioContext=null;
 let introPlaying=false;
+let overlayAction='stage';
 
 function getAudio(){
   audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
@@ -48,8 +78,6 @@ function tone(kind){
 function playIntroTheme(done){
   if(introPlaying) return;
   introPlaying=true;
-  title.textContent='WAREHOUSE MADNESS';
-  intro.textContent='Tap a pallet, then tap its matching dock door. Fill the trailers before the floor jams.';
   start.disabled=true;
   start.textContent='SAFETY MUSIC...';
 
@@ -73,7 +101,7 @@ function playIntroTheme(done){
   setTimeout(function(){
     introPlaying=false;
     start.disabled=false;
-    start.textContent='START SHIFT';
+    start.textContent=currentStage.button;
     done();
   },3650);
 }
@@ -92,12 +120,44 @@ function scheduleNote(ctx,base,freq,delay,duration,type,volume){
   osc.stop(base+delay+duration+0.03);
 }
 
+function showStageIntro(index){
+  stageIndex=index;
+  currentStage=stagePlans[stageIndex];
+  targets=currentStage.targets.slice();
+  maxFloor=currentStage.maxFloor;
+  counts=[0,0,0,0];
+  pallets=[];
+  selected=null;
+  busy=false;
+  running=false;
+  clearInterval(timer);
+  overlayAction='stage';
+  overlay.style.display='flex';
+  title.textContent='STAGE '+currentStage.id+' - '+currentStage.name;
+  intro.textContent=currentStage.intro;
+  start.textContent=currentStage.button;
+  start.disabled=false;
+  msg.textContent='Tap a pallet, then its matching dock door.';
+  renderDoors();
+  renderPallets();
+}
+
+function showTrainingAward(){
+  overlayAction='award';
+  overlay.style.display='flex';
+  title.textContent=currentStage.completeTitle;
+  intro.textContent=currentStage.completeText;
+  start.textContent='BEGIN PRODUCTION SHIFT';
+  start.disabled=false;
+  tone('win');
+}
+
 function renderDoors(){
   doors.innerHTML='';
   for(let i=0;i<4;i++){
     const door=document.createElement('div');
     door.className='door';
-    door.innerHTML='<button data-door="'+(i+1)+'">DOOR '+(i+1)+'<small>Trailer</small><div class="count">'+counts[i]+' / '+targets[i]+'</div></button>';
+    door.innerHTML='<button data-door="'+(i+1)+'"><span>DOOR '+(i+1)+'</span><small>Trailer Bay</small><div class="count">'+counts[i]+' / '+targets[i]+'</div></button>';
     doors.appendChild(door);
   }
 }
@@ -111,27 +171,55 @@ function renderPallets(){
     button.dataset.id=pallet.id;
     palletsEl.appendChild(button);
   });
-  statusEl.textContent='Floor: '+pallets.length+'/'+maxFloor;
+  if(currentStage.timed){
+    statusEl.textContent='Stage '+currentStage.id+' | Floor: '+pallets.length+'/'+maxFloor;
+  }else{
+    statusEl.textContent='Stage '+currentStage.id+' | Loaded: '+loadedTotal()+'/'+targetTotal();
+  }
+}
+
+function loadedTotal(){
+  return counts.reduce(function(total,count){return total+count;},0);
+}
+
+function targetTotal(){
+  return targets.reduce(function(total,count){return total+count;},0);
 }
 
 function neededDoor(){
   const open=[1,2,3,4].filter(function(num){return counts[num-1] < targets[num-1];});
-  return open[Math.floor(Math.random()*open.length)] || 1;
+  return open[Math.floor(Math.random()*open.length)] || null;
 }
 
 function spawn(){
   if(!running || busy) return;
-  if(pallets.length >= maxFloor){
+  const door=neededDoor();
+  if(!door) return;
+  if(currentStage.timed && pallets.length >= maxFloor){
     endGame(false,'Floor jammed. Shift over.');
     return;
   }
-  pallets.push({id:nextId++,door:neededDoor()});
+  if(!currentStage.timed && pallets.length >= 4) return;
+  pallets.push({id:nextId++,door:door});
   renderPallets();
+}
+
+function refillTraining(){
+  if(currentStage.timed) return;
+  while(running && pallets.length < 4 && neededDoor()){
+    spawn();
+  }
 }
 
 function checkWin(){
   if(counts.every(function(count,index){return count >= targets[index];})){
-    endGame(true,'All trailers loaded. Zorktron approves.');
+    if(currentStage.id===1){
+      running=false;
+      clearInterval(timer);
+      setTimeout(showTrainingAward,450);
+    }else{
+      endGame(true,currentStage.completeText);
+    }
   }
 }
 
@@ -142,21 +230,22 @@ function endGame(won,text){
   tone(won?'win':'bad');
   setTimeout(function(){
     overlay.style.display='flex';
-    title.textContent=won?'SHIFT COMPLETE':'SHIFT FAILED';
+    title.textContent=won?currentStage.completeTitle:'SHIFT FAILED';
     intro.textContent=text;
-    start.textContent='PLAY AGAIN';
+    start.textContent=won?'PLAY AGAIN':'RETRY SHIFT';
+    overlayAction=won?'restart':'stage';
   },450);
 }
 
-function newGame(){
-  counts.fill(0);
+function startStage(){
+  counts=[0,0,0,0];
   pallets=[];
   selected=null;
   busy=false;
   running=true;
   nextId=1;
   overlay.style.display='none';
-  msg.textContent='Tap a pallet, then its matching dock door.';
+  msg.textContent=currentStage.timed?'Production line is live.':'Training shift: accuracy first.';
   fork.style.left='50%';
   fork.style.top='52%';
   load.style.display='none';
@@ -164,7 +253,9 @@ function newGame(){
   renderPallets();
   for(let i=0;i<4;i++) spawn();
   clearInterval(timer);
-  timer=setInterval(spawn,1850);
+  if(currentStage.timed){
+    timer=setInterval(spawn,currentStage.spawnMs);
+  }
 }
 
 function deliver(doorNumber){
@@ -172,15 +263,10 @@ function deliver(doorNumber){
   const pallet=pallets.find(function(item){return item.id===selected;});
   if(!pallet) return;
   if(pallet.door !== doorNumber){
-    msg.textContent='Wrong door. Pallet '+pallet.door+' belongs at Door '+pallet.door+'.';
+    msg.textContent='Wrong dock. Pallet '+pallet.door+' belongs at Door '+pallet.door+'.';
     selected=null;
-    busy=true;
     tone('bad');
     renderPallets();
-    setTimeout(function(){
-      busy=false;
-      msg.textContent='Try another pallet.';
-    },650);
     return;
   }
   busy=true;
@@ -204,7 +290,13 @@ function deliver(doorNumber){
     setTimeout(function(){
       busy=false;
       checkWin();
-      if(running && pallets.length < 4) spawn();
+      if(running){
+        if(currentStage.timed){
+          if(pallets.length < 4) spawn();
+        }else{
+          refillTraining();
+        }
+      }
     },550);
   },700);
 }
@@ -224,12 +316,24 @@ doors.addEventListener('click',function(event){
 });
 
 start.addEventListener('click',function(){
-  playIntroTheme(newGame);
+  if(overlayAction==='award'){
+    showStageIntro(1);
+    return;
+  }
+  if(overlayAction==='restart'){
+    showStageIntro(0);
+    return;
+  }
+  playIntroTheme(startStage);
 });
-restart.addEventListener('click',newGame);
+
+restart.addEventListener('click',function(){
+  showStageIntro(0);
+});
+
 sound.addEventListener('click',function(){
   soundOn=!soundOn;
   sound.textContent='SOUND: '+(soundOn?'ON':'OFF');
 });
 
-renderDoors();
+showStageIntro(0);
