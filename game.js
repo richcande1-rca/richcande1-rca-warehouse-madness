@@ -46,6 +46,12 @@ const altStart=document.createElement('button');
 altStart.id='altStart';
 altStart.type='button';
 start.insertAdjacentElement('afterend',altStart);
+restart.textContent='NEW GAME';
+const replayShift=document.createElement('button');
+replayShift.id='replayShift';
+replayShift.type='button';
+replayShift.textContent='REPLAY SHIFT';
+restart.insertAdjacentElement('afterend',replayShift);
 
 let pallets=[];
 let selected=null;
@@ -57,6 +63,7 @@ let soundOn=true;
 let audioContext=null;
 let introPlaying=false;
 let overlayAction='stage';
+let trainingWrongDocks=0;
 
 function getAudio(){
   audioContext = audioContext || new (window.AudioContext || window.webkitAudioContext)();
@@ -135,6 +142,7 @@ function showStageIntro(index){
   selected=null;
   busy=false;
   running=false;
+  trainingWrongDocks=0;
   clearInterval(timer);
   overlayAction='stage';
   overlay.style.display='flex';
@@ -204,7 +212,7 @@ function spawn(){
   const door=neededDoor();
   if(!door) return;
   if(currentStage.timed && pallets.length >= maxFloor){
-    endGame(false,'Floor jammed. Shift over.');
+    endGame(false,'You have not met expectations. This is your first warning.','EXPECTATIONS NOT MET');
     return;
   }
   if(!currentStage.timed && pallets.length >= 4) return;
@@ -231,16 +239,16 @@ function checkWin(){
   }
 }
 
-function endGame(won,text){
+function endGame(won,text,failTitle){
   running=false;
   clearInterval(timer);
   msg.textContent=text;
   tone(won?'win':'bad');
   setTimeout(function(){
     overlay.style.display='flex';
-    title.textContent=won?currentStage.completeTitle:'SHIFT FAILED';
+    title.textContent=won?currentStage.completeTitle:(failTitle || 'SHIFT FAILED');
     intro.textContent=text;
-    start.textContent=won?'REPLAY SHIFT':'RETRY SHIFT';
+    start.textContent=won?'REPLAY SHIFT':(currentStage.id===1?'RETRY TRAINING':'RETRY SHIFT');
     altStart.textContent='NEW GAME';
     altStart.style.display='block';
     overlayAction='replay';
@@ -254,6 +262,7 @@ function startStage(){
   busy=false;
   running=true;
   nextId=1;
+  trainingWrongDocks=0;
   overlay.style.display='none';
   altStart.style.display='none';
   msg.textContent=currentStage.timed?'Production line is live.':'Training shift: accuracy first.';
@@ -274,9 +283,19 @@ function deliver(doorNumber){
   const pallet=pallets.find(function(item){return item.id===selected;});
   if(!pallet) return;
   if(pallet.door !== doorNumber){
-    msg.textContent='Wrong dock. Pallet '+pallet.door+' belongs at Door '+pallet.door+'.';
     selected=null;
     tone('bad');
+    if(currentStage.id===1){
+      trainingWrongDocks++;
+      renderPallets();
+      if(trainingWrongDocks >= 2){
+        endGame(false,"Sorry, we don't think you fit this position.",'TRAINING FAILED');
+        return;
+      }
+      msg.textContent='Accuracy coaching: that pallet belongs at Door '+pallet.door+'. One more wrong dock ends training.';
+      return;
+    }
+    msg.textContent='Wrong dock. Pallet '+pallet.door+' belongs at Door '+pallet.door+'.';
     renderPallets();
     return;
   }
@@ -348,6 +367,10 @@ altStart.addEventListener('click',function(){
 
 restart.addEventListener('click',function(){
   showStageIntro(0);
+});
+
+replayShift.addEventListener('click',function(){
+  showStageIntro(stageIndex);
 });
 
 sound.addEventListener('click',function(){
