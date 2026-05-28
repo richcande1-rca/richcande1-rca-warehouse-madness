@@ -148,6 +148,31 @@ function scheduleNote(ctx,base,freq,delay,duration,type,volume){
   osc.stop(base+delay+duration+0.03);
 }
 
+function playWinJingle(){
+  if(!soundOn) return;
+  const ctx=getAudio();
+  const now=ctx.currentTime;
+  const notes=[
+    [523,0.00,.10],[659,.12,.10],[784,.24,.12],[1046,.40,.18],
+    [784,.66,.10],[1046,.80,.26]
+  ];
+  const bass=[[262,0.00,.18],[392,.40,.18],[523,.80,.26]];
+  notes.forEach(function(n){scheduleNote(ctx,now,n[0],n[1],n[2],'square',0.055);});
+  bass.forEach(function(n){scheduleNote(ctx,now,n[0],n[1],n[2],'triangle',0.035);});
+}
+
+function playLoseJingle(){
+  if(!soundOn) return;
+  const ctx=getAudio();
+  const now=ctx.currentTime;
+  const notes=[
+    [392,0.00,.18],[349,.20,.18],[294,.40,.22],[196,.68,.34]
+  ];
+  const bass=[[130,0.68,.36]];
+  notes.forEach(function(n){scheduleNote(ctx,now,n[0],n[1],n[2],'sawtooth',0.055);});
+  bass.forEach(function(n){scheduleNote(ctx,now,n[0],n[1],n[2],'triangle',0.045);});
+}
+
 function buildTargets(plan){
   if(!plan.randomTargets) return plan.targets.slice();
   const min=plan.minTarget || 3;
@@ -196,7 +221,7 @@ function showTrainingAward(){
   start.disabled=false;
   altStart.textContent='REPLAY TRAINING';
   altStart.style.display='block';
-  tone('win');
+  playWinJingle();
 }
 
 function showStageAdvance(){
@@ -209,7 +234,7 @@ function showStageAdvance(){
   start.disabled=false;
   altStart.textContent='REPLAY SHIFT';
   altStart.style.display='block';
-  tone('win');
+  playWinJingle();
 }
 
 function showPause(){
@@ -333,7 +358,11 @@ function endGame(won,text,failTitle){
   clearInterval(timer);
   pauseShift.textContent='PAUSE';
   msg.textContent=text;
-  tone(won?'win':'bad');
+  if(won){
+    playWinJingle();
+  }else{
+    playLoseJingle();
+  }
   setTimeout(function(){
     overlay.style.display='flex';
     title.textContent=won?currentStage.completeTitle:(failTitle || 'SHIFT FAILED');
