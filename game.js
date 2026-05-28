@@ -61,13 +61,18 @@ const altStart=document.createElement('button');
 altStart.id='altStart';
 altStart.type='button';
 start.insertAdjacentElement('afterend',altStart);
+const shiftDetails=[
+  '2 pallets per door · no timer',
+  '5 per door · live floor pressure',
+  'random targets · overage freight returns'
+];
 const shiftButtons=[];
 let lastShiftButton=altStart;
 stagePlans.forEach(function(plan,index){
   const button=document.createElement('button');
   button.type='button';
-  button.className='shiftChoice';
-  button.textContent=plan.name;
+  button.className='shiftChoice'+(index===2?' shiftDanger':'');
+  button.innerHTML='<span class="shiftNo">STAGE '+plan.id+'</span><span class="shiftName">'+plan.name+'</span><span class="shiftDetail">'+shiftDetails[index]+'</span>';
   button.dataset.stage=index;
   button.style.display='none';
   lastShiftButton.insertAdjacentElement('afterend',button);
