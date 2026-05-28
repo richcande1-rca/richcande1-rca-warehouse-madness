@@ -61,12 +61,25 @@ const altStart=document.createElement('button');
 altStart.id='altStart';
 altStart.type='button';
 start.insertAdjacentElement('afterend',altStart);
+const shiftButtons=[];
+let lastShiftButton=altStart;
+stagePlans.forEach(function(plan,index){
+  const button=document.createElement('button');
+  button.type='button';
+  button.className='shiftChoice';
+  button.textContent=plan.name;
+  button.dataset.stage=index;
+  button.style.display='none';
+  lastShiftButton.insertAdjacentElement('afterend',button);
+  shiftButtons.push(button);
+  lastShiftButton=button;
+});
 const pauseShift=document.createElement('button');
 pauseShift.id='pauseShift';
 pauseShift.type='button';
 pauseShift.textContent='PAUSE';
 sound.insertAdjacentElement('afterend',pauseShift);
-restart.textContent='NEW GAME';
+restart.textContent='SHIFTS';
 
 let pallets=[];
 let selected=null;
@@ -107,6 +120,7 @@ function playIntroTheme(done){
   introPlaying=true;
   start.disabled=true;
   altStart.style.display='none';
+  hideShiftButtons();
   start.textContent='SAFETY MUSIC...';
 
   if(soundOn){
@@ -173,6 +187,31 @@ function playLoseJingle(){
   bass.forEach(function(n){scheduleNote(ctx,now,n[0],n[1],n[2],'triangle',0.045);});
 }
 
+function hideShiftButtons(){
+  shiftButtons.forEach(function(button){
+    button.style.display='none';
+  });
+}
+
+function showShiftSelect(){
+  running=false;
+  paused=false;
+  busy=false;
+  selected=null;
+  clearInterval(timer);
+  pauseShift.textContent='PAUSE';
+  overlayAction='select';
+  overlay.style.display='flex';
+  title.textContent='CHOOSE SHIFT';
+  intro.textContent='Pick a shift to start.';
+  start.style.display='none';
+  altStart.style.display='none';
+  shiftButtons.forEach(function(button){
+    button.style.display='block';
+  });
+  msg.textContent='Choose a shift.';
+}
+
 function buildTargets(plan){
   if(!plan.randomTargets) return plan.targets.slice();
   const min=plan.minTarget || 1;
@@ -200,13 +239,16 @@ function showStageIntro(index){
   trainingWrongDocks=0;
   clearInterval(timer);
   pauseShift.textContent='PAUSE';
+  hideShiftButtons();
   overlayAction='stage';
   overlay.style.display='flex';
   title.textContent='STAGE '+currentStage.id+' - '+currentStage.name;
   intro.textContent=currentStage.intro+(currentStage.randomTargets?' '+targetSummary():'');
+  start.style.display='block';
   start.textContent=currentStage.button;
   start.disabled=false;
-  altStart.style.display='none';
+  altStart.textContent='SELECT SHIFT';
+  altStart.style.display='block';
   msg.textContent='Tap a pallet, then its matching dock door.';
   renderDoors();
   renderPallets();
@@ -215,8 +257,10 @@ function showStageIntro(index){
 function showTrainingAward(){
   overlayAction='award';
   overlay.style.display='flex';
+  hideShiftButtons();
   title.textContent=currentStage.completeTitle;
   intro.textContent=currentStage.completeText;
+  start.style.display='block';
   start.textContent='BEGIN PRODUCTION SHIFT';
   start.disabled=false;
   altStart.textContent='REPLAY TRAINING';
@@ -228,8 +272,10 @@ function showStageAdvance(){
   const nextStage=stagePlans[stageIndex+1];
   overlayAction='advance';
   overlay.style.display='flex';
+  hideShiftButtons();
   title.textContent=currentStage.completeTitle;
   intro.textContent=currentStage.completeText;
+  start.style.display='block';
   start.textContent='BEGIN '+nextStage.name;
   start.disabled=false;
   altStart.textContent='REPLAY SHIFT';
@@ -248,11 +294,13 @@ function showPause(){
   pauseShift.textContent='PAUSED';
   overlayAction='pause';
   overlay.style.display='flex';
+  hideShiftButtons();
   title.textContent='SHIFT PAUSED';
   intro.textContent='Production is temporarily stopped.';
+  start.style.display='block';
   start.textContent='RESUME SHIFT';
   start.disabled=false;
-  altStart.textContent='NEW GAME';
+  altStart.textContent='SHIFT SELECT';
   altStart.style.display='block';
 }
 
@@ -261,6 +309,7 @@ function resumePause(){
   paused=false;
   overlay.style.display='none';
   altStart.style.display='none';
+  hideShiftButtons();
   pauseShift.textContent='PAUSE';
   msg.textContent='Shift resumed.';
   clearInterval(timer);
@@ -365,10 +414,12 @@ function endGame(won,text,failTitle){
   }
   setTimeout(function(){
     overlay.style.display='flex';
+    hideShiftButtons();
     title.textContent=won?currentStage.completeTitle:(failTitle || 'SHIFT FAILED');
     intro.textContent=text;
+    start.style.display='block';
     start.textContent=won?'REPLAY SHIFT':(currentStage.id===1?'RETRY TRAINING':'RETRY SHIFT');
-    altStart.textContent='NEW GAME';
+    altStart.textContent='SHIFT SELECT';
     altStart.style.display='block';
     overlayAction='replay';
   },450);
@@ -385,6 +436,7 @@ function startStage(){
   trainingWrongDocks=0;
   overlay.style.display='none';
   altStart.style.display='none';
+  hideShiftButtons();
   pauseShift.textContent='PAUSE';
   msg.textContent=currentStage.timed?'Production line is live.':'Training shift: accuracy first.';
   fork.style.left='50%';
@@ -509,15 +561,25 @@ start.addEventListener('click',function(){
 });
 
 altStart.addEventListener('click',function(){
+  if(overlayAction==='award'){
+    showStageIntro(0);
+    return;
+  }
   if(overlayAction==='advance'){
     showStageIntro(stageIndex);
     return;
   }
-  showStageIntro(0);
+  showShiftSelect();
+});
+
+shiftButtons.forEach(function(button){
+  button.addEventListener('click',function(){
+    showStageIntro(Number(button.dataset.stage));
+  });
 });
 
 restart.addEventListener('click',function(){
-  showStageIntro(0);
+  showShiftSelect();
 });
 
 pauseShift.addEventListener('click',function(){
