@@ -32,10 +32,29 @@ const stagePlans=[
     maxFloor:8,
     timed:true,
     spawnMs:1800,
+    returnOverage:true,
     button:'START DISPATCH',
     intro:'Each dock has a different target count. Extra freight comes back around instead of disappearing.',
     completeTitle:'DISPATCH COMPLETE',
     completeText:'All dispatch doors loaded. Door Dash complete.'
+  },
+  {
+    id:4,
+    name:'SPOTTER SHUFFLE',
+    targets:[1,2,3,4],
+    randomTargets:true,
+    minTarget:1,
+    maxTarget:5,
+    maxFloor:8,
+    timed:true,
+    spawnMs:1750,
+    returnOverage:true,
+    shuffleDoors:true,
+    shuffleEvery:2,
+    button:'START SHUFFLE',
+    intro:'The spotter keeps moving trailers. Door labels shuffle every 2 successful loads. Match pallets to the current door labels.',
+    completeTitle:'SHUFFLE COMPLETE',
+    completeText:'All shuffled trailers loaded. Spotter Shuffle complete.'
   }
 ];
 
@@ -44,6 +63,8 @@ let currentStage=stagePlans[0];
 let targets=currentStage.targets.slice();
 let counts=[0,0,0,0];
 let maxFloor=currentStage.maxFloor;
+let doorLabels=[1,2,3,4];
+let successfulLoads=0;
 
 const doors=document.getElementById('doors');
 const palletsEl=document.getElementById('pallets');
@@ -64,14 +85,15 @@ start.insertAdjacentElement('afterend',altStart);
 const shiftDetails=[
   '2 pallets per door · no timer',
   '5 per door · live floor pressure',
-  'random targets · overage freight returns'
+  'random targets · overage freight returns',
+  'door labels shuffle every 2 loads'
 ];
 const shiftButtons=[];
 let lastShiftButton=altStart;
 stagePlans.forEach(function(plan,index){
   const button=document.createElement('button');
   button.type='button';
-  button.className='shiftChoice'+(index===2?' shiftDanger':'');
+  button.className='shiftChoice'+(index>=2?' shiftDanger':'');
   button.innerHTML='<span class="shiftNo">STAGE '+plan.id+'</span><span class="shiftName">'+plan.name+'</span><span class="shiftDetail">'+shiftDetails[index]+'</span>';
   button.dataset.stage=index;
   button.style.display='none';
@@ -230,6 +252,33 @@ function targetSummary(){
   return 'Targets: Door 1 '+targets[0]+', Door 2 '+targets[1]+', Door 3 '+targets[2]+', Door 4 '+targets[3]+'.';
 }
 
+function doorLabelForPosition(position){
+  return doorLabels[position-1] || position;
+}
+
+function resetDoorLabels(){
+  doorLabels=[1,2,3,4];
+}
+
+function sameLabels(a,b){
+  return a.every(function(value,index){return value===b[index];});
+}
+
+function shuffleDoorLabels(){
+  const oldLabels=doorLabels.slice();
+  let shuffled=oldLabels.slice();
+  let guard=0;
+  do{
+    shuffled=[1,2,3,4].sort(function(){return Math.random()-.5;});
+    guard++;
+  }while(sameLabels(shuffled,oldLabels) && guard<12);
+  doorLabels=shuffled;
+}
+
+function targetsComplete(){
+  return counts.every(function(count,index){return count >= targets[index];});
+}
+
 function showStageIntro(index){
   stageIndex=index;
   currentStage=stagePlans[stageIndex];
@@ -242,6 +291,8 @@ function showStageIntro(index){
   running=false;
   paused=false;
   trainingWrongDocks=0;
+  successfulLoads=0;
+  resetDoorLabels();
   clearInterval(timer);
   pauseShift.textContent='PAUSE';
   hideShiftButtons();
@@ -326,9 +377,10 @@ function resumePause(){
 function renderDoors(){
   doors.innerHTML='';
   for(let i=0;i<4;i++){
+    const label=doorLabelForPosition(i+1);
     const door=document.createElement('div');
     door.className='door';
-    door.innerHTML='<button data-door="'+(i+1)+'"><span>DOOR '+(i+1)+'</span><small>Trailer Bay</small><div class="count">'+counts[i]+' / '+targets[i]+'</div></button>';
+    door.innerHTML='<button data-door="'+(i+1)+'"><span>DOOR '+label+'</span><small>Bay '+(i+1)+'</small><div class="count">'+counts[label-1]+' / '+targets[label-1]+'</div></button>';
     doors.appendChild(door);
   }
 }
@@ -391,7 +443,7 @@ function refillTraining(){
 }
 
 function checkWin(){
-  if(counts.every(function(count,index){return count >= targets[index];})){
+  if(targetsComplete()){
     if(currentStage.id===1){
       running=false;
       clearInterval(timer);
@@ -439,11 +491,13 @@ function startStage(){
   paused=false;
   nextId=1;
   trainingWrongDocks=0;
+  successfulLoads=0;
+  resetDoorLabels();
   overlay.style.display='none';
   altStart.style.display='none';
   hideShiftButtons();
   pauseShift.textContent='PAUSE';
-  msg.textContent=currentStage.timed?'Production line is live.':'Training shift: accuracy first.';
+  msg.textContent=currentStage.shuffleDoors?'Spotter Shuffle is live. Watch the door labels.':currentStage.timed?'Production line is live.':'Training shift: accuracy first.';
   fork.style.left='50%';
   fork.style.top='52%';
   load.style.display='none';
@@ -458,9 +512,10 @@ function startStage(){
 
 function deliver(doorNumber){
   if(!running || paused || busy || selected===null) return;
+  const assignedDoor=doorLabelForPosition(doorNumber);
   const pallet=pallets.find(function(item){return item.id===selected;});
   if(!pallet) return;
-  if(pallet.door !== doorNumber){
+  if(pallet.door !== assignedDoor){
     selected=null;
     tone('bad');
     if(currentStage.id===1){
@@ -477,18 +532,18 @@ function deliver(doorNumber){
     renderPallets();
     return;
   }
-  if(counts[doorNumber-1] >= targets[doorNumber-1]){
-    if(currentStage.id===3){
+  if(counts[assignedDoor-1] >= targets[assignedDoor-1]){
+    if(currentStage.returnOverage){
       selected=null;
       tone('bad');
-      msg.textContent='Door '+doorNumber+' is full. Overage pallet returns to the floor.';
+      msg.textContent='Door '+assignedDoor+' is full. Overage pallet returns to the floor.';
       renderDoors();
       renderPallets();
       return;
     }
-    clearCompletedDoorPallets(doorNumber);
+    clearCompletedDoorPallets(assignedDoor);
     tone('ok');
-    msg.textContent='Door '+doorNumber+' is already full. Extra pallets cleared.';
+    msg.textContent='Door '+assignedDoor+' is already full. Extra pallets cleared.';
     renderDoors();
     renderPallets();
     return;
@@ -501,20 +556,26 @@ function deliver(doorNumber){
   fork.style.left=(((doorNumber-0.5)/4)*100)+'%';
   fork.style.top='22%';
   setTimeout(function(){
-    counts[doorNumber-1]=Math.min(counts[doorNumber-1]+1,targets[doorNumber-1]);
-    const doorNowFull=counts[doorNumber-1] >= targets[doorNumber-1];
-    const returnOverage=currentStage.id===3;
+    counts[assignedDoor-1]=Math.min(counts[assignedDoor-1]+1,targets[assignedDoor-1]);
+    successfulLoads++;
+    const doorNowFull=counts[assignedDoor-1] >= targets[assignedDoor-1];
+    const returnOverage=!!currentStage.returnOverage;
     pallets=pallets.filter(function(item){
       if(item.id===selected) return false;
-      if(doorNowFull && item.door===doorNumber && !returnOverage) return false;
+      if(doorNowFull && item.door===assignedDoor && !returnOverage) return false;
       return true;
     });
     selected=null;
+    let shuffled=false;
+    if(currentStage.shuffleDoors && successfulLoads % (currentStage.shuffleEvery || 2)===0 && !targetsComplete()){
+      shuffleDoorLabels();
+      shuffled=true;
+    }
     renderDoors();
     renderPallets();
     tone('ok');
     load.style.display='none';
-    msg.textContent=doorNowFull && returnOverage?'Door '+doorNumber+' full. Extra freight stays in rotation.':doorNowFull?'Door '+doorNumber+' full. Extra pallets cleared.':'Door '+doorNumber+' loaded.';
+    msg.textContent=shuffled?'Spotter moved trailers. Read the door labels.':doorNowFull && returnOverage?'Door '+assignedDoor+' full. Extra freight stays in rotation.':doorNowFull?'Door '+assignedDoor+' full. Extra pallets cleared.':'Door '+assignedDoor+' loaded.';
     fork.style.left='50%';
     fork.style.top='52%';
     setTimeout(function(){
@@ -535,7 +596,7 @@ palletsEl.addEventListener('click',function(event){
   const button=event.target.closest('.pallet');
   if(!button || paused || busy || !running) return;
   selected=Number(button.dataset.id);
-  msg.textContent='Pallet '+button.textContent+' selected. Tap Door '+button.textContent+'.';
+  msg.textContent='Pallet '+button.textContent+' selected. Match the current Door '+button.textContent+' label.';
   tone('move');
   renderPallets();
 });
