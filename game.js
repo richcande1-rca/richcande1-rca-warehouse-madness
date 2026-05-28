@@ -46,17 +46,18 @@ const altStart=document.createElement('button');
 altStart.id='altStart';
 altStart.type='button';
 start.insertAdjacentElement('afterend',altStart);
+const pauseShift=document.createElement('button');
+pauseShift.id='pauseShift';
+pauseShift.type='button';
+pauseShift.textContent='PAUSE';
+sound.insertAdjacentElement('afterend',pauseShift);
 restart.textContent='NEW GAME';
-const replayShift=document.createElement('button');
-replayShift.id='replayShift';
-replayShift.type='button';
-replayShift.textContent='REPLAY SHIFT';
-restart.insertAdjacentElement('afterend',replayShift);
 
 let pallets=[];
 let selected=null;
 let busy=false;
 let running=false;
+let paused=false;
 let timer=null;
 let nextId=1;
 let soundOn=true;
@@ -142,8 +143,10 @@ function showStageIntro(index){
   selected=null;
   busy=false;
   running=false;
+  paused=false;
   trainingWrongDocks=0;
   clearInterval(timer);
+  pauseShift.textContent='PAUSE';
   overlayAction='stage';
   overlay.style.display='flex';
   title.textContent='STAGE '+currentStage.id+' - '+currentStage.name;
@@ -166,6 +169,38 @@ function showTrainingAward(){
   altStart.textContent='REPLAY TRAINING';
   altStart.style.display='block';
   tone('win');
+}
+
+function showPause(){
+  if(!running || paused) return;
+  if(busy){
+    msg.textContent='Pause available after the forklift clears.';
+    return;
+  }
+  paused=true;
+  clearInterval(timer);
+  pauseShift.textContent='PAUSED';
+  overlayAction='pause';
+  overlay.style.display='flex';
+  title.textContent='SHIFT PAUSED';
+  intro.textContent='Production is temporarily stopped.';
+  start.textContent='RESUME SHIFT';
+  start.disabled=false;
+  altStart.textContent='NEW GAME';
+  altStart.style.display='block';
+}
+
+function resumePause(){
+  if(!paused) return;
+  paused=false;
+  overlay.style.display='none';
+  altStart.style.display='none';
+  pauseShift.textContent='PAUSE';
+  msg.textContent='Shift resumed.';
+  clearInterval(timer);
+  if(currentStage.timed && running){
+    timer=setInterval(spawn,currentStage.spawnMs);
+  }
 }
 
 function renderDoors(){
@@ -216,7 +251,7 @@ function clearCompletedDoorPallets(doorNumber){
 }
 
 function spawn(){
-  if(!running || busy) return;
+  if(!running || busy || paused) return;
   const door=neededDoor();
   if(!door) return;
   if(currentStage.timed && pallets.length >= maxFloor){
@@ -230,7 +265,7 @@ function spawn(){
 
 function refillTraining(){
   if(currentStage.timed) return;
-  while(running && pallets.length < 4 && neededDoor()){
+  while(running && !paused && pallets.length < 4 && neededDoor()){
     spawn();
   }
 }
@@ -249,7 +284,9 @@ function checkWin(){
 
 function endGame(won,text,failTitle){
   running=false;
+  paused=false;
   clearInterval(timer);
+  pauseShift.textContent='PAUSE';
   msg.textContent=text;
   tone(won?'win':'bad');
   setTimeout(function(){
@@ -269,10 +306,12 @@ function startStage(){
   selected=null;
   busy=false;
   running=true;
+  paused=false;
   nextId=1;
   trainingWrongDocks=0;
   overlay.style.display='none';
   altStart.style.display='none';
+  pauseShift.textContent='PAUSE';
   msg.textContent=currentStage.timed?'Production line is live.':'Training shift: accuracy first.';
   fork.style.left='50%';
   fork.style.top='52%';
@@ -287,7 +326,7 @@ function startStage(){
 }
 
 function deliver(doorNumber){
-  if(!running || busy || selected===null) return;
+  if(!running || paused || busy || selected===null) return;
   const pallet=pallets.find(function(item){return item.id===selected;});
   if(!pallet) return;
   if(pallet.door !== doorNumber){
@@ -341,7 +380,7 @@ function deliver(doorNumber){
     setTimeout(function(){
       busy=false;
       checkWin();
-      if(running){
+      if(running && !paused){
         if(currentStage.timed){
           if(pallets.length < 4) spawn();
         }else{
@@ -354,7 +393,7 @@ function deliver(doorNumber){
 
 palletsEl.addEventListener('click',function(event){
   const button=event.target.closest('.pallet');
-  if(!button || busy || !running) return;
+  if(!button || paused || busy || !running) return;
   selected=Number(button.dataset.id);
   msg.textContent='Pallet '+button.textContent+' selected. Tap Door '+button.textContent+'.';
   tone('move');
@@ -367,6 +406,10 @@ doors.addEventListener('click',function(event){
 });
 
 start.addEventListener('click',function(){
+  if(overlayAction==='pause'){
+    resumePause();
+    return;
+  }
   if(overlayAction==='award'){
     showStageIntro(1);
     return;
@@ -379,10 +422,6 @@ start.addEventListener('click',function(){
 });
 
 altStart.addEventListener('click',function(){
-  if(overlayAction==='award'){
-    showStageIntro(0);
-    return;
-  }
   showStageIntro(0);
 });
 
@@ -390,8 +429,8 @@ restart.addEventListener('click',function(){
   showStageIntro(0);
 });
 
-replayShift.addEventListener('click',function(){
-  showStageIntro(stageIndex);
+pauseShift.addEventListener('click',function(){
+  showPause();
 });
 
 sound.addEventListener('click',function(){
