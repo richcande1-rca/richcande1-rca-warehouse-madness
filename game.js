@@ -20,7 +20,7 @@ const stagePlans=[
     button:'START PRODUCTION',
     intro:'The line is live. Pallets keep arriving. Fill the trailers before the staging floor jams.',
     completeTitle:'SHIFT COMPLETE',
-    completeText:'All trailers loaded. Shift complete.'
+    completeText:'Congratulations. You made it through production. Get some rest. Have a beer. You earned it.'
   }
 ];
 
