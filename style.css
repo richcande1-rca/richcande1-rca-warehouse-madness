@@ -12,7 +12,7 @@ header:after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:6px;
 .small{font-size:14px}
 #doors{display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding:8px 0;background:#34383d;border-bottom:0;position:relative;z-index:2}
 #doors:before{display:none}
-.door{height:86px;margin:0 6px;border:3px solid #111;border-radius:7px;background:
+.door{height:86px;margin:0 9px;border:3px solid #111;border-radius:7px;background:
   linear-gradient(90deg,rgba(255,255,255,.08),transparent 18%,transparent 82%,rgba(0,0,0,.22)),
   repeating-linear-gradient(0deg,#30343a 0 11px,#252a30 11px 14px);
   box-shadow:inset 0 0 0 3px #474d55,0 4px 0 rgba(0,0,0,.35);position:relative}
@@ -23,16 +23,16 @@ header:after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:6px;
 .count{position:absolute;left:4px;right:4px;bottom:4px;background:#111;border:2px solid #ffd21a;border-radius:5px;padding:1px 2px;font-size:13px;text-align:center}
 #rail{height:22px;background:repeating-linear-gradient(135deg,#ffd21a 0 12px,#111 12px 24px);border-top:3px solid #111;border-bottom:4px solid #111;position:relative;z-index:1}
 #rail:before{content:"";position:absolute;left:0;right:0;top:14px;height:44px;background:
-  linear-gradient(#111,#111) 0 0/20px 44px no-repeat,
-  linear-gradient(#ffd21a,#ffd21a) 4px 4px/12px 36px no-repeat,
-  linear-gradient(#111,#111) calc(25% - 10px) 0/20px 44px no-repeat,
+  linear-gradient(#111,#111) 0 0/18px 44px no-repeat,
+  linear-gradient(#ffd21a,#ffd21a) 3px 4px/12px 36px no-repeat,
+  linear-gradient(#111,#111) calc(25% - 9px) 0/18px 44px no-repeat,
   linear-gradient(#ffd21a,#ffd21a) calc(25% - 6px) 4px/12px 36px no-repeat,
-  linear-gradient(#111,#111) calc(50% - 10px) 0/20px 44px no-repeat,
+  linear-gradient(#111,#111) calc(50% - 9px) 0/18px 44px no-repeat,
   linear-gradient(#ffd21a,#ffd21a) calc(50% - 6px) 4px/12px 36px no-repeat,
-  linear-gradient(#111,#111) calc(75% - 10px) 0/20px 44px no-repeat,
+  linear-gradient(#111,#111) calc(75% - 9px) 0/18px 44px no-repeat,
   linear-gradient(#ffd21a,#ffd21a) calc(75% - 6px) 4px/12px 36px no-repeat,
-  linear-gradient(#111,#111) calc(100% - 20px) 0/20px 44px no-repeat,
-  linear-gradient(#ffd21a,#ffd21a) calc(100% - 16px) 4px/12px 36px no-repeat;
+  linear-gradient(#111,#111) calc(100% - 18px) 0/18px 44px no-repeat,
+  linear-gradient(#ffd21a,#ffd21a) calc(100% - 15px) 4px/12px 36px no-repeat;
   pointer-events:none}
 #rail:after{display:none}
 #floor{position:absolute;left:0;right:0;top:181px;bottom:98px}
@@ -70,7 +70,7 @@ header:after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:6px;
   repeating-linear-gradient(135deg,#ffd21a 0 10px,#111 10px 18px) calc(75% - 9px) 0/18px 100% no-repeat,
   repeating-linear-gradient(135deg,#ffd21a 0 10px,#111 10px 18px) calc(100% - 18px) 0/18px 100% no-repeat;
   opacity:.85;pointer-events:none;z-index:0}
-.pallet{pointer-events:auto;height:70px;margin:0 8px;border:3px solid #3b220d;border-radius:8px;background:
+.pallet{pointer-events:auto;height:70px;margin:0 9px;border:3px solid #3b220d;border-radius:8px;background:
   linear-gradient(90deg,rgba(0,0,0,.15) 0 8%,transparent 8% 46%,rgba(0,0,0,.12) 46% 54%,transparent 54% 92%,rgba(0,0,0,.15) 92%),
   linear-gradient(#c68532,#8d531d);
   box-shadow:0 6px 0 #4a2b10,0 10px 8px rgba(0,0,0,.25);color:#111;font-size:30px;font-weight:1000;position:relative;z-index:1;text-shadow:0 1px 0 rgba(255,255,255,.28)}
