@@ -25,8 +25,8 @@ header:after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:6px;
 #rail:before,#rail:after{content:"";position:absolute;top:14px;width:12px;height:36px;background:#ffd21a;border:3px solid #111;border-radius:4px}
 #rail:before{left:12px}#rail:after{right:12px}
 #floor{position:absolute;left:0;right:0;top:181px;bottom:98px}
-#floor:before{content:"";position:absolute;left:10px;right:10px;bottom:12px;height:18px;background:repeating-linear-gradient(135deg,#ffd21a 0 12px,#111 12px 24px);border:3px solid #111;border-radius:3px;opacity:.96;box-shadow:0 -104px 0 -5px rgba(0,0,0,.28),0 -104px 0 0 rgba(255,210,26,.65)}
-#floor:after{content:"";position:absolute;left:8%;right:8%;top:0;height:84px;background:repeating-linear-gradient(90deg,transparent 0 calc(25% - 8px),#ffd21a calc(25% - 8px) calc(25% - 2px),#111 calc(25% - 2px) calc(25% + 5px),#ffd21a calc(25% + 5px) calc(25% + 9px),transparent calc(25% + 9px) 25%);opacity:.82;pointer-events:none}
+#floor:before{content:"";position:absolute;left:10px;right:10px;bottom:12px;height:18px;background:repeating-linear-gradient(135deg,#ffd21a 0 12px,#111 12px 24px);border:3px solid #111;border-radius:3px;opacity:.96}
+#floor:after{content:"";position:absolute;left:0;right:0;top:20px;height:105px;background:linear-gradient(90deg,transparent 0 calc(25% - 8px),#ffd21a calc(25% - 8px) calc(25% - 3px),#111 calc(25% - 3px) calc(25% + 3px),#ffd21a calc(25% + 3px) calc(25% + 8px),transparent calc(25% + 8px) calc(50% - 8px),#ffd21a calc(50% - 8px) calc(50% - 3px),#111 calc(50% - 3px) calc(50% + 3px),#ffd21a calc(50% + 3px) calc(50% + 8px),transparent calc(50% + 8px) calc(75% - 8px),#ffd21a calc(75% - 8px) calc(75% - 3px),#111 calc(75% - 3px) calc(75% + 3px),#ffd21a calc(75% + 3px) calc(75% + 8px),transparent calc(75% + 8px) 100%);opacity:.88;pointer-events:none}
 .line{position:absolute;left:0;right:0;height:4px;background:rgba(255,255,255,.12);box-shadow:0 2px 0 rgba(0,0,0,.12)}
 .l1{top:33%}.l2{top:66%}
 #fork{position:absolute;width:84px;height:58px;left:50%;top:52%;transform:translate(-50%,-50%);transition:left .55s linear,top .55s linear;z-index:4;filter:drop-shadow(0 8px 4px rgba(0,0,0,.35))}
