@@ -25,15 +25,15 @@ const stagePlans=[
   {
     id:3,
     name:'DISPATCH CHAOS',
-    targets:[4,5,6,7],
+    targets:[1,2,3,4],
     randomTargets:true,
-    minTarget:3,
-    maxTarget:7,
+    minTarget:1,
+    maxTarget:5,
     maxFloor:8,
     timed:true,
     spawnMs:1800,
     button:'START DISPATCH',
-    intro:'Each dock has a different target count. Watch the board, manage the floor, and finish dispatch.',
+    intro:'Each dock has a different target count. Extra freight comes back around instead of disappearing.',
     completeTitle:'DISPATCH COMPLETE',
     completeText:'All dispatch doors loaded. Door Dash complete.'
   }
@@ -175,8 +175,8 @@ function playLoseJingle(){
 
 function buildTargets(plan){
   if(!plan.randomTargets) return plan.targets.slice();
-  const min=plan.minTarget || 3;
-  const max=plan.maxTarget || 7;
+  const min=plan.minTarget || 1;
+  const max=plan.maxTarget || 5;
   return [0,1,2,3].map(function(){
     return min + Math.floor(Math.random()*(max-min+1));
   });
@@ -421,6 +421,14 @@ function deliver(doorNumber){
     return;
   }
   if(counts[doorNumber-1] >= targets[doorNumber-1]){
+    if(currentStage.id===3){
+      selected=null;
+      tone('bad');
+      msg.textContent='Door '+doorNumber+' is full. Overage pallet returns to the floor.';
+      renderDoors();
+      renderPallets();
+      return;
+    }
     clearCompletedDoorPallets(doorNumber);
     tone('ok');
     msg.textContent='Door '+doorNumber+' is already full. Extra pallets cleared.';
@@ -438,9 +446,10 @@ function deliver(doorNumber){
   setTimeout(function(){
     counts[doorNumber-1]=Math.min(counts[doorNumber-1]+1,targets[doorNumber-1]);
     const doorNowFull=counts[doorNumber-1] >= targets[doorNumber-1];
+    const returnOverage=currentStage.id===3;
     pallets=pallets.filter(function(item){
       if(item.id===selected) return false;
-      if(doorNowFull && item.door===doorNumber) return false;
+      if(doorNowFull && item.door===doorNumber && !returnOverage) return false;
       return true;
     });
     selected=null;
@@ -448,7 +457,7 @@ function deliver(doorNumber){
     renderPallets();
     tone('ok');
     load.style.display='none';
-    msg.textContent=doorNowFull?'Door '+doorNumber+' full. Extra pallets cleared.':'Door '+doorNumber+' loaded.';
+    msg.textContent=doorNowFull && returnOverage?'Door '+doorNumber+' full. Extra freight stays in rotation.':doorNowFull?'Door '+doorNumber+' full. Extra pallets cleared.':'Door '+doorNumber+' loaded.';
     fork.style.left='50%';
     fork.style.top='52%';
     setTimeout(function(){
