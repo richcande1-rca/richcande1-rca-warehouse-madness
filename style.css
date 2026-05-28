@@ -32,7 +32,11 @@ header:after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:6px;
   pointer-events:none}
 #rail:after{display:none}
 #floor{position:absolute;left:0;right:0;top:181px;bottom:98px}
-#floor:before{display:none}
+#floor:before{content:"";position:absolute;left:0;right:0;top:-22px;bottom:0;background:
+  repeating-linear-gradient(135deg,#ffd21a 0 10px,#111 10px 18px) 0 0/18px 100% no-repeat,
+  repeating-linear-gradient(135deg,#ffd21a 0 10px,#111 10px 18px) calc(100% - 18px) 0/18px 100% no-repeat,
+  repeating-linear-gradient(135deg,#ffd21a 0 10px,#111 10px 18px) 0 calc(100% - 18px)/100% 18px no-repeat;
+  opacity:.92;pointer-events:none}
 #floor:after{content:"";position:absolute;left:0;right:0;top:-22px;bottom:0;background:
   repeating-linear-gradient(135deg,#ffd21a 0 10px,#111 10px 18px) calc(25% - 9px) 0/18px 100% no-repeat,
   repeating-linear-gradient(135deg,#ffd21a 0 10px,#111 10px 18px) calc(50% - 9px) 0/18px 100% no-repeat,
