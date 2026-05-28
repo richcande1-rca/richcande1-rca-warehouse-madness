@@ -2,11 +2,11 @@ const stagePlans=[
   {
     id:1,
     name:'TRAINING SHIFT',
-    targets:[3,3,3,3],
-    maxFloor:12,
+    targets:[2,2,2,2],
+    maxFloor:8,
     timed:false,
     button:'START TRAINING',
-    intro:'Load 3 pallets per dock. No time limit. Match each pallet number to the same dock door.',
+    intro:'Load 2 pallets per dock. No time limit. Match each pallet number to the same dock door.',
     completeTitle:'TRAINING COMPLETE',
     completeText:'Congratulations! Welcome to the team! You are now certified for basic dock freight.'
   },
@@ -21,6 +21,21 @@ const stagePlans=[
     intro:'The line is live. Pallets keep arriving. Fill the trailers before the staging floor jams.',
     completeTitle:'SHIFT COMPLETE',
     completeText:'Congratulations. You made it through production. Get some rest. Have a beer. You earned it.'
+  },
+  {
+    id:3,
+    name:'DISPATCH CHAOS',
+    targets:[4,5,6,7],
+    randomTargets:true,
+    minTarget:3,
+    maxTarget:7,
+    maxFloor:8,
+    timed:true,
+    spawnMs:1800,
+    button:'START DISPATCH',
+    intro:'Each dock has a different target count. Watch the board, manage the floor, and finish dispatch.',
+    completeTitle:'DISPATCH COMPLETE',
+    completeText:'All dispatch doors loaded. Door Dash complete.'
   }
 ];
 
@@ -133,10 +148,23 @@ function scheduleNote(ctx,base,freq,delay,duration,type,volume){
   osc.stop(base+delay+duration+0.03);
 }
 
+function buildTargets(plan){
+  if(!plan.randomTargets) return plan.targets.slice();
+  const min=plan.minTarget || 3;
+  const max=plan.maxTarget || 7;
+  return [0,1,2,3].map(function(){
+    return min + Math.floor(Math.random()*(max-min+1));
+  });
+}
+
+function targetSummary(){
+  return 'Targets: Door 1 '+targets[0]+', Door 2 '+targets[1]+', Door 3 '+targets[2]+', Door 4 '+targets[3]+'.';
+}
+
 function showStageIntro(index){
   stageIndex=index;
   currentStage=stagePlans[stageIndex];
-  targets=currentStage.targets.slice();
+  targets=buildTargets(currentStage);
   maxFloor=currentStage.maxFloor;
   counts=[0,0,0,0];
   pallets=[];
@@ -150,7 +178,7 @@ function showStageIntro(index){
   overlayAction='stage';
   overlay.style.display='flex';
   title.textContent='STAGE '+currentStage.id+' - '+currentStage.name;
-  intro.textContent=currentStage.intro;
+  intro.textContent=currentStage.intro+(currentStage.randomTargets?' '+targetSummary():'');
   start.textContent=currentStage.button;
   start.disabled=false;
   altStart.style.display='none';
@@ -167,6 +195,19 @@ function showTrainingAward(){
   start.textContent='BEGIN PRODUCTION SHIFT';
   start.disabled=false;
   altStart.textContent='REPLAY TRAINING';
+  altStart.style.display='block';
+  tone('win');
+}
+
+function showStageAdvance(){
+  const nextStage=stagePlans[stageIndex+1];
+  overlayAction='advance';
+  overlay.style.display='flex';
+  title.textContent=currentStage.completeTitle;
+  intro.textContent=currentStage.completeText;
+  start.textContent='BEGIN '+nextStage.name;
+  start.disabled=false;
+  altStart.textContent='REPLAY SHIFT';
   altStart.style.display='block';
   tone('win');
 }
@@ -276,6 +317,10 @@ function checkWin(){
       running=false;
       clearInterval(timer);
       setTimeout(showTrainingAward,450);
+    }else if(stageIndex < stagePlans.length-1){
+      running=false;
+      clearInterval(timer);
+      setTimeout(showStageAdvance,450);
     }else{
       endGame(true,currentStage.completeText);
     }
@@ -414,6 +459,10 @@ start.addEventListener('click',function(){
     showStageIntro(1);
     return;
   }
+  if(overlayAction==='advance'){
+    showStageIntro(stageIndex+1);
+    return;
+  }
   if(overlayAction==='replay'){
     showStageIntro(stageIndex);
     return;
@@ -422,6 +471,10 @@ start.addEventListener('click',function(){
 });
 
 altStart.addEventListener('click',function(){
+  if(overlayAction==='advance'){
+    showStageIntro(stageIndex);
+    return;
+  }
   showStageIntro(0);
 });
 
