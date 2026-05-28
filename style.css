@@ -23,16 +23,12 @@ header:after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:6px;
 .count{position:absolute;left:4px;right:4px;bottom:4px;background:#111;border:2px solid #ffd21a;border-radius:5px;padding:1px 2px;font-size:13px;text-align:center}
 #rail{height:22px;background:repeating-linear-gradient(135deg,#ffd21a 0 12px,#111 12px 24px);border-top:3px solid #111;border-bottom:4px solid #111;position:relative;z-index:1}
 #rail:before{content:"";position:absolute;left:0;right:0;top:14px;height:44px;background:
-  linear-gradient(#111,#111) 0 0/18px 44px no-repeat,
-  linear-gradient(#ffd21a,#ffd21a) 3px 4px/12px 36px no-repeat,
   linear-gradient(#111,#111) calc(25% - 9px) 0/18px 44px no-repeat,
   linear-gradient(#ffd21a,#ffd21a) calc(25% - 6px) 4px/12px 36px no-repeat,
   linear-gradient(#111,#111) calc(50% - 9px) 0/18px 44px no-repeat,
   linear-gradient(#ffd21a,#ffd21a) calc(50% - 6px) 4px/12px 36px no-repeat,
   linear-gradient(#111,#111) calc(75% - 9px) 0/18px 44px no-repeat,
-  linear-gradient(#ffd21a,#ffd21a) calc(75% - 6px) 4px/12px 36px no-repeat,
-  linear-gradient(#111,#111) calc(100% - 18px) 0/18px 44px no-repeat,
-  linear-gradient(#ffd21a,#ffd21a) calc(100% - 15px) 4px/12px 36px no-repeat;
+  linear-gradient(#ffd21a,#ffd21a) calc(75% - 6px) 4px/12px 36px no-repeat;
   pointer-events:none}
 #rail:after{display:none}
 #floor{position:absolute;left:0;right:0;top:181px;bottom:98px}
