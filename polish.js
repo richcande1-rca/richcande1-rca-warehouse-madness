@@ -6,7 +6,10 @@
     {name:'MADNESS!',scale:.55}
   ];
   let level=0;
+  let nextToken=1;
+  const freightTimers=new Map();
   const rawSetInterval=window.setInterval.bind(window);
+  const rawClearInterval=window.clearInterval.bind(window);
 
   function current(){return levels[level];}
   function isFreightTimer(delay){return typeof delay==='number' && delay>=1700 && delay<=1900;}
@@ -14,8 +17,32 @@
 
   window.setInterval=function(fn,delay){
     const args=Array.prototype.slice.call(arguments,2);
-    return rawSetInterval.apply(window,[fn,isFreightTimer(delay)?scaledDelay(delay):delay].concat(args));
+    if(!isFreightTimer(delay)){
+      return rawSetInterval.apply(window,[fn,delay].concat(args));
+    }
+    const token='freight-'+(nextToken++);
+    const timer={fn:fn,delay:delay,args:args,realId:null};
+    timer.realId=rawSetInterval.apply(window,[fn,scaledDelay(delay)].concat(args));
+    freightTimers.set(token,timer);
+    return token;
   };
+
+  window.clearInterval=function(id){
+    if(freightTimers.has(id)){
+      const timer=freightTimers.get(id);
+      rawClearInterval(timer.realId);
+      freightTimers.delete(id);
+      return;
+    }
+    rawClearInterval(id);
+  };
+
+  function retimeFreightTimers(){
+    freightTimers.forEach(function(timer){
+      rawClearInterval(timer.realId);
+      timer.realId=rawSetInterval.apply(window,[timer.fn,scaledDelay(timer.delay)].concat(timer.args));
+    });
+  }
 
   function installDifficultyButton(){
     const pause=document.getElementById('pauseShift');
@@ -28,7 +55,8 @@
     button.addEventListener('click',function(){
       level=(level+1)%levels.length;
       render();
-      if(msg) msg.textContent='Difficulty set to '+current().name+'. New speed starts next shift/resume.';
+      retimeFreightTimers();
+      if(msg) msg.textContent='Difficulty changed to '+current().name+'. Floor speed updated now.';
     });
     render();
     pause.insertAdjacentElement('afterend',button);
