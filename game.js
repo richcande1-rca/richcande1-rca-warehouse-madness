@@ -132,14 +132,16 @@ function tone(kind){
   const ctx = getAudio();
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
+  const isBad = kind === 'bad';
+  const isSpawn = kind === 'spawn';
   osc.connect(gain);
   gain.connect(ctx.destination);
-  osc.type = kind === 'bad' ? 'sawtooth' : 'square';
-  osc.frequency.value = kind === 'bad' ? 130 : kind === 'move' ? 520 : kind === 'win' ? 780 : 660;
-  gain.gain.value = kind === 'bad' ? 0.09 : 0.055;
+  osc.type = isBad ? 'sawtooth' : isSpawn ? 'triangle' : 'square';
+  osc.frequency.value = isBad ? 130 : isSpawn ? 392 : kind === 'move' ? 520 : kind === 'win' ? 780 : 660;
+  gain.gain.value = isBad ? 0.09 : isSpawn ? 0.035 : 0.055;
   osc.start();
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (kind === 'bad' ? 0.28 : 0.12));
-  osc.stop(ctx.currentTime + (kind === 'bad' ? 0.30 : 0.14));
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + (isBad ? 0.28 : isSpawn ? 0.07 : 0.12));
+  osc.stop(ctx.currentTime + (isBad ? 0.30 : isSpawn ? 0.09 : 0.14));
 }
 
 function playIntroTheme(done){
@@ -432,6 +434,7 @@ function spawn(){
   }
   if(!currentStage.timed && pallets.length >= 4) return;
   pallets.push({id:nextId++,door:door});
+  tone('spawn');
   renderPallets();
 }
 
