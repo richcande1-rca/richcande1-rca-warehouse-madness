@@ -13,10 +13,10 @@ header:after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:6px;
 #doors{display:grid;grid-template-columns:repeat(4,1fr);gap:0;padding:8px 0;background:#34383d;border-bottom:0;position:relative;z-index:2}
 #doors:before{display:none}
 #doors:after{content:"";position:absolute;left:0;right:0;bottom:-34px;height:34px;background:
-  linear-gradient(135deg,#a9b0b6,#737a82 55%,#444a50) left 18px top 2px/calc(25% - 36px) 30px no-repeat,
-  linear-gradient(135deg,#a9b0b6,#737a82 55%,#444a50) left calc(25% + 18px) top 2px/calc(25% - 36px) 30px no-repeat,
-  linear-gradient(135deg,#a9b0b6,#737a82 55%,#444a50) left calc(50% + 18px) top 2px/calc(25% - 36px) 30px no-repeat,
-  linear-gradient(135deg,#a9b0b6,#737a82 55%,#444a50) left calc(75% + 18px) top 2px/calc(25% - 36px) 30px no-repeat;
+  linear-gradient(135deg,#a9b0b6,#737a82 55%,#444a50) left 24px top 2px/calc(25% - 48px) 30px no-repeat,
+  linear-gradient(135deg,#a9b0b6,#737a82 55%,#444a50) left calc(25% + 24px) top 2px/calc(25% - 48px) 30px no-repeat,
+  linear-gradient(135deg,#a9b0b6,#737a82 55%,#444a50) left calc(50% + 24px) top 2px/calc(25% - 48px) 30px no-repeat,
+  linear-gradient(135deg,#a9b0b6,#737a82 55%,#444a50) left calc(75% + 24px) top 2px/calc(25% - 48px) 30px no-repeat;
   filter:drop-shadow(0 2px 0 #111);pointer-events:none;z-index:4}
 .door{height:86px;margin:0 16px;border:3px solid #111;border-radius:7px;background:
   linear-gradient(90deg,rgba(255,255,255,.08),transparent 18%,transparent 82%,rgba(0,0,0,.22)),
