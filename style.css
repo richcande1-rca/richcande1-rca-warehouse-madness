@@ -53,14 +53,14 @@ header:after{content:"";position:absolute;left:0;right:0;bottom:-6px;height:6px;
 .wheel:after{content:"";position:absolute;left:6px;top:6px;width:6px;height:6px;background:#777;border-radius:50%}
 .w1{left:31px}.w2{right:7px}
 #load{position:absolute;left:-2px;top:17px;width:30px;height:30px;border:2px solid #3b220d;background:linear-gradient(#bb7a31,#8d531d);border-radius:4px;text-align:center;font-weight:1000;color:#111;display:none;line-height:26px;z-index:1}
-#pallets{position:absolute;left:0;right:0;bottom:98px;height:138px;padding:30px 0 8px;display:grid;grid-template-columns:18px minmax(0,1fr) 18px minmax(0,1fr) 18px minmax(0,1fr) 18px minmax(0,1fr) 18px;gap:0;align-items:end;pointer-events:none;z-index:3}
+#pallets{position:absolute;left:0;right:0;bottom:98px;height:210px;padding:36px 0 8px;display:grid;grid-template-columns:18px minmax(0,1fr) 18px minmax(0,1fr) 18px minmax(0,1fr) 18px minmax(0,1fr) 18px;grid-template-rows:1fr 1fr;row-gap:10px;gap:10px 0;align-items:end;pointer-events:none;z-index:3}
 #pallets:before{content:"";position:absolute;left:0;right:0;top:8px;height:18px;background:repeating-linear-gradient(135deg,#ffd21a 0 12px,#111 12px 24px);border-top:3px solid #111;border-bottom:3px solid #111;pointer-events:none;z-index:0}
 #pallets:after{content:"";position:absolute;inset:8px 0 0;background:
   repeating-linear-gradient(135deg,#ffd21a 0 10px,#111 10px 18px) left calc(25% - 4.5px) top 0/18px 100% no-repeat,
   repeating-linear-gradient(135deg,#ffd21a 0 10px,#111 10px 18px) left calc(50% - 9px) top 0/18px 100% no-repeat,
   repeating-linear-gradient(135deg,#ffd21a 0 10px,#111 10px 18px) left calc(75% - 13.5px) top 0/18px 100% no-repeat;
   opacity:.85;pointer-events:none;z-index:0}
-.pallet:nth-child(1){grid-column:2}.pallet:nth-child(2){grid-column:4}.pallet:nth-child(3){grid-column:6}.pallet:nth-child(4){grid-column:8}
+.pallet:nth-child(1),.pallet:nth-child(5){grid-column:2}.pallet:nth-child(2),.pallet:nth-child(6){grid-column:4}.pallet:nth-child(3),.pallet:nth-child(7){grid-column:6}.pallet:nth-child(4),.pallet:nth-child(8){grid-column:8}.pallet:nth-child(-n+4){grid-row:1}.pallet:nth-child(n+5){grid-row:2}
 .pallet{pointer-events:auto;height:70px;margin:0 8px;border:3px solid #3b220d;border-radius:8px;background:
   linear-gradient(90deg,rgba(0,0,0,.15) 0 8%,transparent 8% 46%,rgba(0,0,0,.12) 46% 54%,transparent 54% 92%,rgba(0,0,0,.15) 92%),
   linear-gradient(#c68532,#8d531d);
