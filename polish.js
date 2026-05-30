@@ -1,9 +1,9 @@
 (function(){
   const levels=[
-    {name:'EASY',scale:1,bonusMs:500},
-    {name:'MEDIUM',scale:.85,bonusMs:300},
-    {name:'HARD',scale:.70,bonusMs:150},
-    {name:'MADNESS!',scale:.55,bonusMs:0}
+    {name:'EASY',scale:1},
+    {name:'MEDIUM',scale:.85},
+    {name:'HARD',scale:.70},
+    {name:'MADNESS!',scale:.55}
   ];
   let level=0;
   let nextToken=1;
@@ -19,7 +19,7 @@
 
   function current(){return levels[level];}
   function isFreightTimer(delay){return typeof delay==='number' && delay>=1700 && delay<=1900;}
-  function scaledDelay(delay){return Math.max(650,Math.round(delay*current().scale)+(current().bonusMs || 0));}
+  function scaledDelay(delay){return Math.max(650,Math.round(delay*current().scale));}
 
   window.setInterval=function(fn,delay){
     const args=Array.prototype.slice.call(arguments,2);
