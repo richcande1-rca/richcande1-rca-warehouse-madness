@@ -74,18 +74,25 @@
   }
 
   function showBonusUnlock(){
-    if(!hazardsUnlocked || document.getElementById('hazardMode')) return;
     const difficulty=document.getElementById('difficulty');
     if(!difficulty) return;
-    const button=document.createElement('button');
-    button.id='hazardMode';
-    button.type='button';
-    button.textContent='BONUS: BEWARE HAZARDS!';
-    arcadeButton(button,'#ffd21a');
-    button.addEventListener('click',function(){
-      beginHazardBonus();
-    });
-    difficulty.insertAdjacentElement('afterend',button);
+    let button=document.getElementById('hazardMode');
+    if(!button){
+      button=document.createElement('button');
+      button.id='hazardMode';
+      button.type='button';
+      arcadeButton(button,'#ffd21a');
+      button.addEventListener('click',function(){
+        if(!hazardsUnlocked) return;
+        beginHazardBonus();
+      });
+      difficulty.insertAdjacentElement('afterend',button);
+    }
+    button.disabled=!hazardsUnlocked;
+    button.textContent=hazardsUnlocked?'BONUS: BEWARE HAZARDS!':'BONUS: BEWARE HAZARDS! - LOCKED';
+    button.style.opacity=hazardsUnlocked?'1':'.45';
+    button.style.filter=hazardsUnlocked?'none':'grayscale(1)';
+    button.style.cursor=hazardsUnlocked?'pointer':'not-allowed';
   }
 
   function beginHazardBonus(){
@@ -293,6 +300,7 @@
   }
 
   installDifficultyButton();
+  showBonusUnlock();
   installGameHooks();
   installForkliftPolish();
 })();
