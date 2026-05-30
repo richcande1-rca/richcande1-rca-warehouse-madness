@@ -7,6 +7,12 @@
   ];
   let level=0;
   let nextToken=1;
+  let hazardsUnlocked=false;
+  let hazardsOn=false;
+  let writeUps=0;
+  let supervisorPresent=false;
+  let activeHazard=null;
+  let tripOpen=false;
   const freightTimers=new Map();
   const rawSetInterval=window.setInterval.bind(window);
   const rawClearInterval=window.clearInterval.bind(window);
@@ -44,14 +50,18 @@
     });
   }
 
+  function arcadeButton(button,accent){
+    button.style.cssText='width:100%;margin-top:10px;border:0;border-radius:8px;padding:12px 4px;background:'+accent+';color:#111;font-size:14px;font-weight:1000;box-shadow:0 4px 0 rgba(0,0,0,.45);';
+  }
+
   function installDifficultyButton(){
-    const panel=document.querySelector('.panel');
     const start=document.getElementById('start');
     const msg=document.getElementById('msg');
-    if(!panel || !start || document.getElementById('difficulty')) return;
+    if(!start || document.getElementById('difficulty')) return;
     const button=document.createElement('button');
     button.id='difficulty';
     button.type='button';
+    arcadeButton(button,'#ff8f1f');
     function render(){button.textContent='DIFFICULTY: '+current().name;}
     button.addEventListener('click',function(){
       level=(level+1)%levels.length;
@@ -61,6 +71,121 @@
     });
     render();
     start.insertAdjacentElement('beforebegin',button);
+  }
+
+  function showBonusUnlock(){
+    if(!hazardsUnlocked || document.getElementById('hazardMode')) return;
+    const difficulty=document.getElementById('difficulty');
+    if(!difficulty) return;
+    const button=document.createElement('button');
+    button.id='hazardMode';
+    button.type='button';
+    button.textContent='BONUS: BEWARE HAZARDS!';
+    arcadeButton(button,'#ffd21a');
+    button.addEventListener('click',function(){
+      beginHazardBonus();
+    });
+    difficulty.insertAdjacentElement('afterend',button);
+  }
+
+  function beginHazardBonus(){
+    hazardsOn=true;
+    resetHazardRun();
+    showStageIntro(3);
+    setTimeout(function(){
+      title.textContent='BONUS: BEWARE HAZARDS!';
+      intro.textContent='No floor-jam loss. Load Spotter Shuffle while clearing aisle hazards. Some junk is harmless until the supervisor is watching.';
+      start.textContent='START BONUS';
+      showBonusUnlock();
+    },0);
+  }
+
+  function hazardStatus(){
+    let status=document.getElementById('hazardStatus');
+    const msg=document.getElementById('msg');
+    if(status || !msg) return status;
+    status=document.createElement('div');
+    status.id='hazardStatus';
+    status.style.cssText='text-align:center;font-size:11px;font-weight:1000;min-height:14px;margin:-3px 0 3px;color:#ffd21a;letter-spacing:.8px;text-transform:uppercase;';
+    msg.insertAdjacentElement('afterend',status);
+    return status;
+  }
+
+  function updateHazardStatus(text){
+    const status=hazardStatus();
+    if(status) status.textContent=text || '';
+  }
+
+  function resetHazardRun(){
+    writeUps=0;
+    supervisorPresent=false;
+    tripOpen=false;
+    clearActiveHazard();
+    updateHazardStatus('');
+  }
+
+  function clearActiveHazard(){
+    if(activeHazard){
+      if(activeHazard.timeout) rawClearInterval(activeHazard.timeout);
+      if(activeHazard.el) activeHazard.el.remove();
+    }
+    activeHazard=null;
+  }
+
+  function installGameHooks(){
+    if(typeof spawn==='function' && !spawn.__hazardWrapped){
+      const originalSpawn=spawn;
+      spawn=function(){
+        if(hazardsOn && running && currentStage && currentStage.timed && pallets.length>=maxFloor){
+          renderPallets();
+          return;
+        }
+        return originalSpawn.apply(this,arguments);
+      };
+      spawn.__hazardWrapped=true;
+    }
+
+    if(typeof startStage==='function' && !startStage.__hazardWrapped){
+      const originalStartStage=startStage;
+      startStage=function(){
+        resetHazardRun();
+        return originalStartStage.apply(this,arguments);
+      };
+      startStage.__hazardWrapped=true;
+    }
+
+    if(typeof endGame==='function' && !endGame.__hazardWrapped){
+      const originalEndGame=endGame;
+      endGame=function(won,text,failTitle){
+        if(hazardsOn && won){
+          hazardsOn=false;
+          clearActiveHazard();
+          updateHazardStatus('');
+          const oldTitle=currentStage.completeTitle;
+          const oldText=currentStage.completeText;
+          currentStage.completeTitle='BONUS COMPLETE';
+          currentStage.completeText='Hazards survived. No safety meeting required.';
+          originalEndGame.call(this,true,currentStage.completeText);
+          setTimeout(function(){
+            currentStage.completeTitle=oldTitle;
+            currentStage.completeText=oldText;
+            showBonusUnlock();
+          },900);
+          return;
+        }
+        if(hazardsOn && !won){
+          hazardsOn=false;
+          clearActiveHazard();
+          updateHazardStatus('');
+        }
+        originalEndGame.apply(this,arguments);
+        if(won && currentStage && currentStage.id===4){
+          hazardsUnlocked=true;
+          setTimeout(showBonusUnlock,520);
+        }
+      };
+      endGame.__hazardWrapped=true;
+    }
   }
 
   function installForkliftPolish(){
@@ -78,11 +203,96 @@
       }else if(top==='52%'){
         fork.classList.remove('docking');
       }
+      watchTrip();
     }
-    new MutationObserver(apply).observe(fork,{attributes:true,attributeFilter:['style']});
+    new MutationObserver(apply).observe(fork,{attributes:true,attributeFilter:['style','class']});
     apply();
   }
 
+  function watchTrip(){
+    const fork=document.getElementById('fork');
+    if(!fork) return;
+    const docking=fork.classList.contains('docking') && fork.style.top==='8%';
+    if(hazardsOn && docking && !tripOpen){
+      tripOpen=true;
+      startTripHazard();
+    }
+    if(tripOpen && (!docking || fork.style.top==='52%')){
+      tripOpen=false;
+      supervisorPresent=false;
+      if(!activeHazard) updateHazardStatus('');
+    }
+  }
+
+  function startTripHazard(){
+    if(!hazardsOn || activeHazard) return;
+    supervisorPresent=Math.random()<.36;
+    updateHazardStatus(supervisorPresent?'SUPERVISOR PRESENT':'');
+    if(Math.random()>.72) return;
+    const types=[
+      {kind:'debris',label:'DEBRIS',reaction:1400,left:25+Math.random()*50,top:42+Math.random()*20},
+      {kind:'phone',label:'PHONE GUY',reaction:950,left:20+Math.random()*60,top:32+Math.random()*24},
+      {kind:'traffic',label:'CROSS TRAFFIC',reaction:760,left:18+Math.random()*64,top:24+Math.random()*22}
+    ];
+    createHazard(types[Math.floor(Math.random()*types.length)]);
+  }
+
+  function createHazard(data){
+    const floor=document.getElementById('floor');
+    if(!floor) return;
+    const el=document.createElement('button');
+    el.type='button';
+    el.textContent=data.label;
+    el.style.cssText='position:absolute;left:'+data.left+'%;top:'+data.top+'%;transform:translate(-50%,-50%);z-index:8;border:3px solid #111;border-radius:8px;padding:8px 7px;background:#ffdf3a;color:#111;font-size:11px;font-weight:1000;box-shadow:0 4px 0 rgba(0,0,0,.45);';
+    activeHazard={data:data,el:el,cleared:false,timeout:null};
+    el.addEventListener('click',function(event){
+      event.stopPropagation();
+      if(!activeHazard) return;
+      activeHazard.cleared=true;
+      const msg=document.getElementById('msg');
+      if(msg) msg.textContent=data.kind==='phone'?'HONK! Pedestrian cleared.':data.kind==='traffic'?'Braked for cross traffic.':'Debris cleared.';
+      clearActiveHazard();
+      updateHazardStatus(supervisorPresent?'SUPERVISOR PRESENT':'');
+    });
+    floor.appendChild(el);
+    activeHazard.timeout=rawSetInterval(function(){
+      missHazard(data);
+    },data.reaction);
+  }
+
+  function missHazard(data){
+    if(!activeHazard || activeHazard.cleared) return;
+    clearActiveHazard();
+    if(data.kind==='debris' && !supervisorPresent && Math.random()>.22){
+      const msg=document.getElementById('msg');
+      if(msg) msg.textContent='Rolled over some junk. Probably fine.';
+      updateHazardStatus('');
+      return;
+    }
+    if(data.kind==='debris'){
+      issueWriteUp('Observed operating over debris.');
+    }else if(data.kind==='phone'){
+      issueWriteUp('Pedestrian near miss.');
+    }else{
+      issueWriteUp('Cross traffic incident.');
+    }
+  }
+
+  function issueWriteUp(reason){
+    writeUps++;
+    const msg=document.getElementById('msg');
+    if(msg) msg.textContent=reason+' Write-up '+writeUps+'/3.';
+    updateHazardStatus((supervisorPresent?'SUPERVISOR PRESENT · ':'')+'WRITE-UP '+writeUps+'/3');
+    if(writeUps>=3){
+      hazardsOn=false;
+      clearActiveHazard();
+      setTimeout(function(){
+        endGame(false,'Three safety write-ups. Bonus failed.','BONUS FAILED');
+      },350);
+    }
+  }
+
   installDifficultyButton();
+  installGameHooks();
   installForkliftPolish();
 })();
