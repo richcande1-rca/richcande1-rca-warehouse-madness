@@ -55,6 +55,15 @@
     button.style.cssText='width:100%;margin-top:10px;border:0;border-radius:8px;padding:12px 4px;background:'+accent+';color:#111;font-size:14px;font-weight:1000;box-shadow:0 4px 0 rgba(0,0,0,.45);';
   }
 
+  function easeSpotterShuffle(){
+    if(typeof stagePlans==='object' && stagePlans[3]){
+      stagePlans[3].shuffleEvery=3;
+      stagePlans[3].intro='The spotter keeps moving trailers. Door labels shuffle every 3 successful loads. Match pallets to the current door labels.';
+    }
+    const detail=document.querySelector('button.shiftChoice[data-stage="3"] .shiftDetail');
+    if(detail) detail.textContent='door labels shuffle every 3 loads';
+  }
+
   function installDifficultyButton(){
     const start=document.getElementById('start');
     const msg=document.getElementById('msg');
@@ -75,7 +84,9 @@
 
   function showBonusUnlock(){
     const difficulty=document.getElementById('difficulty');
-    if(!difficulty) return;
+    const ssButton=document.querySelector('button.shiftChoice[data-stage="3"]');
+    const anchor=ssButton || difficulty;
+    if(!anchor) return;
     let button=document.getElementById('hazardMode');
     if(!button){
       button=document.createElement('button');
@@ -86,10 +97,12 @@
         if(!hazardsUnlocked) return;
         beginHazardBonus();
       });
-      difficulty.insertAdjacentElement('afterend',button);
+    }
+    if(button.previousElementSibling!==anchor){
+      anchor.insertAdjacentElement('afterend',button);
     }
     button.disabled=!hazardsUnlocked;
-    button.textContent=hazardsUnlocked?'BONUS: BEWARE HAZARDS!':'BONUS: BEWARE HAZARDS! - LOCKED';
+    button.textContent=hazardsUnlocked?'BONUS: BEWARE HAZARDS!':'BONUS: LOCKED - WIN SPOTTER SHUFFLE';
     button.style.opacity=hazardsUnlocked?'1':'.45';
     button.style.filter=hazardsUnlocked?'none':'grayscale(1)';
     button.style.cursor=hazardsUnlocked?'pointer':'not-allowed';
@@ -152,10 +165,24 @@
       spawn.__hazardWrapped=true;
     }
 
+    if(typeof showStageIntro==='function' && !showStageIntro.__polishWrapped){
+      const originalShowStageIntro=showStageIntro;
+      showStageIntro=function(){
+        easeSpotterShuffle();
+        const result=originalShowStageIntro.apply(this,arguments);
+        showBonusUnlock();
+        return result;
+      };
+      showStageIntro.__polishWrapped=true;
+    }
+
     if(typeof startStage==='function' && !startStage.__hazardWrapped){
       const originalStartStage=startStage;
       startStage=function(){
         resetHazardRun();
+        if(currentStage && currentStage.id===4){
+          currentStage.shuffleEvery=3;
+        }
         return originalStartStage.apply(this,arguments);
       };
       startStage.__hazardWrapped=true;
@@ -295,6 +322,7 @@
     }
   }
 
+  easeSpotterShuffle();
   installDifficultyButton();
   showBonusUnlock();
   installGameHooks();
