@@ -45,13 +45,14 @@
   }
 
   function installDifficultyButton(){
-    const pause=document.getElementById('pauseShift');
+    const panel=document.querySelector('.panel');
+    const start=document.getElementById('start');
     const msg=document.getElementById('msg');
-    if(!pause || document.getElementById('difficulty')) return;
+    if(!panel || !start || document.getElementById('difficulty')) return;
     const button=document.createElement('button');
     button.id='difficulty';
     button.type='button';
-    function render(){button.textContent='DIFF: '+current().name;}
+    function render(){button.textContent='DIFFICULTY: '+current().name;}
     button.addEventListener('click',function(){
       level=(level+1)%levels.length;
       render();
@@ -59,7 +60,7 @@
       if(msg) msg.textContent='Difficulty changed to '+current().name+'. Floor speed updated now.';
     });
     render();
-    pause.insertAdjacentElement('afterend',button);
+    start.insertAdjacentElement('beforebegin',button);
   }
 
   function installForkliftPolish(){
