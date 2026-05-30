@@ -13,7 +13,8 @@
 
   function current(){return levels[level];}
   function isFreightTimer(delay){return typeof delay==='number' && delay>=1700 && delay<=1900;}
-  function scaledDelay(delay){return Math.max(650,Math.round(delay*current().scale));}
+  function spotterShufflePad(delay){return delay===1750 ? 500 : 0;}
+  function scaledDelay(delay){return Math.max(650,Math.round(delay*current().scale)+spotterShufflePad(delay));}
 
   window.setInterval=function(fn,delay){
     const args=Array.prototype.slice.call(arguments,2);
