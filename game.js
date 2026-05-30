@@ -425,7 +425,7 @@ function clearCompletedDoorPallets(doorNumber){
 }
 
 function spawn(){
-  if(!running || busy || paused) return;
+  if(!running || paused) return;
   const door=neededDoor();
   if(!door) return;
   if(currentStage.timed && pallets.length >= maxFloor){
