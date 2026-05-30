@@ -66,19 +66,15 @@
   function installForkliftPolish(){
     const fork=document.getElementById('fork');
     if(!fork) return;
-    let correcting=false;
+
     function apply(){
-      if(correcting) return;
-      const top=fork.style.top;
-      if(top==='22%'){
-        correcting=true;
+      if(fork.style.top==='22%'){
         fork.classList.add('docking');
-        fork.style.top='8%';
-        correcting=false;
-      }else if(top==='52%'){
+      }else if(fork.style.top==='52%'){
         fork.classList.remove('docking');
       }
     }
+
     new MutationObserver(apply).observe(fork,{attributes:true,attributeFilter:['style']});
     apply();
   }
